@@ -1,0 +1,84 @@
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  Provisioning an AWS Glue.
+Parameters:
+  Subnet:
+    Description: >-
+      The id of a subnet vpc
+    Type: AWS::EC2::Subnet::Id
+    ConstraintDescription: must contain only alphanumeric characters.
+    
+  SecurityGroup:
+    Description: >-
+      The list of a security group of the vpc
+    Type: AWS::EC2::SecurityGroup::Id
+    ConstraintDescription: must contain only alphanumeric characters.
+
+  ClusterType:
+    Description: The type of the redshift cluster.
+    Type: String
+    Default: single-node
+    AllowedValues:
+      - single-node
+      - multi-node
+    ConstraintDescription: must be single-node or multi-node.
+
+  ClusterName:
+    Description: The name of the redshift cluster.
+    Type: String
+    ConstraintDescription: must contain only characters.
+    AllowedPattern: '[a-z]*'
+
+  NodeType:
+    Description: The node type to be provisioned for the redshift cluster
+    Type: String
+    Default: dc2.large
+    ConstraintDescription: must be a valid RedShift node type.
+
+  MasterUsername:
+    Description: >-
+      The user name associated with the master user account for the redshift
+      cluster that is being created
+    Type: String
+    AllowedPattern: '([a-z])([a-z]|[0-9])*'
+    NoEcho: 'true'
+    ConstraintDescription: must start with a-z and contain only a-z or 0-9.
+
+  MasterUserPassword:
+    Description: >-
+      The password associated with the aster user account for the redshift
+      cluster that is being created. 
+    Type: String
+    NoEcho: 'true'
+    MinLength: '1'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
+Resources:
+
+  RedshiftCluster:
+      Type: 'AWS::Redshift::Cluster'
+      Properties:
+        ClusterType: !Ref ClusterType
+        NodeType: !Ref NodeType
+        DBName: dev
+        MasterUsername: !Ref MasterUsername
+        MasterUserPassword: !Ref MasterUserPassword
+        ClusterParameterGroupName: !Ref RedshiftClusterParameterGroup
+        ClusterIdentifier: !Ref ClusterName
+      DeletionPolicy: Snapshot
+  RedshiftClusterParameterGroup:
+    Type: 'AWS::Redshift::ClusterParameterGroup'
+    Properties:
+      Description: Cluster parameter group
+      ParameterGroupFamily: redshift-1.0
+      Parameters:
+        - ParameterName: enable_user_activity_logging
+          ParameterValue: 'true'
+  RedshiftClusterSubnetGroup:
+    Type: 'AWS::Redshift::ClusterSubnetGroup'
+    Properties:
+      Description: Cluster subnet group
+      SubnetIds:
+        - !Ref Subnet
